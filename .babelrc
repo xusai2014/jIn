@@ -6,7 +6,6 @@
   ],
   "plugins": [
     "@babel/plugin-transform-runtime",
-    "@babel/plugin-syntax-async-generators",
-    "add-module-exports"
+    "@babel/plugin-syntax-async-generators"
   ]
 }
