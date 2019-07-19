@@ -1,9 +1,10 @@
 {
   "name": "jin-pack",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "气死人，打包器！！！💪",
+  "keywords": ["webpack","Vue","SSR"],
   "bin": {
-    "jIn": "./jIn.js"
+    "jIn": "lib/jIn.js"
   },
   "scripts": {
     "build": "babel ./src  --out-dir ./lib",
@@ -21,6 +22,7 @@
     "babel-plugin-add-module-exports": "^1.0.2",
     "cache-loader": "^4.1.0",
     "chokidar": "^3.0.2",
+    "inquirer": "^6.5.0",
     "thread-loader": "^2.1.2",
     "webpack-dev-middleware": "^3.7.0",
     "webpack-hot-middleware": "^2.25.0",

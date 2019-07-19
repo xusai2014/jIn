@@ -52,18 +52,23 @@ const readFile = (fs, file, path) => {
   } catch (e) {}
 }
 
-function initMiddleWare(app, configPath,port) {
-  let configs = ['client','server']
+function getWebpackConfigs(configPath) {
+  const configs = ['client','server']
     .map((str)=>{
-    if(fs.existsSync(configPath)){
-      // import 动态引入需要侵入被引用框架处理，require().default问题，目前尚未在工具端找到解决方案
-      // clientConfig = await import(path.resolve(process.cwd(),`${configPath}/webpack.client.config.js`));
-      // serverConfig = await import(path.resolve(process.cwd(),`${configPath}/webpack.server.config.js`));
-      return require(path.join(process.cwd(),`${configPath}/webpack.${str}.config.js`));
-    } else {
-      return GeneratePack('development', str, 2);
-    }
-  })
+      if(fs.existsSync(configPath)){
+        // import 动态引入需要侵入被引用框架处理，require().default问题，目前尚未在工具端找到解决方案
+        // clientConfig = await import(path.resolve(process.cwd(),`${configPath}/webpack.client.config.js`));
+        // serverConfig = await import(path.resolve(process.cwd(),`${configPath}/webpack.server.config.js`));
+        return require(path.join(process.cwd(),`${configPath}/webpack.${str}.config.js`));
+      } else {
+        return GeneratePack('development', str, 2);
+      }
+    })
+  return configs;
+}
+
+function initMiddleWare(app, configPath,port) {
+  let configs = getWebpackConfigs(configPath);
 
   // 获取webpack配置信息及devMiddleWare配置信息
   const [ clientConfig ] = configs;
@@ -181,7 +186,8 @@ async function ready(app, configPath, port) {
 }
 
 // 启动监听服务，并做好热开发打包文件加载进入内存
-async function  start(port,configPath) {
+async function  start(port,configPath,answers) {
+  process.env.NODE_ENV = 'development'
   if (port > 1000) {
     await preDll(configPath);
 
@@ -192,8 +198,23 @@ async function  start(port,configPath) {
   }
 }
 
+async function build(configPath, answers) {
+  process.env.NODE_ENV = 'production'
+  await preDll(configPath);
+  const configs = getWebpackConfigs(configPath);
+  try {
+    webpack(configs,(args)=>{
+      console.log('******',args)
+    });
+  } catch (e) {
+    console.log(e)
+  }
+
+}
+
 
 
 export  {
-  start
+  start,
+  build
 }
