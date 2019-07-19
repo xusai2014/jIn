@@ -10,7 +10,7 @@ import fs from 'fs';
 import webpackHotMiddleWare from 'webpack-hot-middleware';
 import chokidar from 'chokidar';
 import { execFile } from 'child_process';
-import HappyPack from 'happypack';
+import faster from './faster';
 
 const app = express();
 
@@ -66,91 +66,35 @@ function initMiddleWare(app, configPath,port) {
   })
 
   // 获取webpack配置信息及devMiddleWare配置信息
-  const [ clientConfig,serverConfig ] = configs;
-  const devConfigs = configs.map((config)=>{
-    const { module,plugins } = config;
-    const { rules } = module;
-    const cacheRules = rules.map((v)=>{
-      const { loader,options, ...rest } = v;
-      if(loader == 'vue-loader'){
-        return {
-          ...rest,
-          use:[
-            'cache-loader',
-            {
-              loader: 'vue-loader',
-              options: {
-                loaders: {
-                  'babel-loader': 'happypack/loader?id=babel-loader' // 将loader换成happypack
-                }
-              }
-            }
-          ],
+  const [ clientConfig ] = configs;
 
-        }
-      }
-      if(loader == 'babel-loader'){
-        plugins.push(
-          new HappyPack({
-            //用id来标识 happypack处理那里类文件
-            id: loader,
-            //如何处理  用法和loader 的配置一样
-            loaders: [
-              'cache-loader',
-              {
-                loader,
-                options,
-              }],
-            //共享进程池
-            threadPool: HappyPack.ThreadPool({ size: os.cpus().length }),
-            //允许 HappyPack 输出日志
-            verbose: true,
-          })
-
-        );
-
-        return {
-          ...rest,
-          use:[`happypack/loader?id=${loader}`],
-        }
-      } else {
-        return v;
-      }
-
-    });
-    module.rules = cacheRules
-    return {
-      ...config,
-      mode:'development',
-      bail:true,
-      module,
-      plugins,
-    }
-  });
-
-  const compiler = webpack(devConfigs);
-
+  const compiler = webpack(faster(configs));
 
   compiler.plugin('done', stats => {
-    console.log('finished package hook');
     const outPath = clientConfig.output.path;
     const clietJson = 'vue-ssr-client-manifest.json';
     const serverJson = 'vue-ssr-server-bundle.json';
     const devfs = devMiddleware.fileSystem;
-
-    stats = stats.toJson()
-    if (stats.errors.length) return;
-
+    try {
+      const data = stats.toJson();
+      //fs.writeFile('./stats.json', JSON.stringify(data))
+      if (data.errors.length>0) throw Error('打包出现了异常');
+    } catch (e) {
+      console.log(e)
+    }
     try {
       const clientManifest = JSON.parse(readFile(devfs, clietJson,outPath));
 
       const bundle = JSON.parse(readFile(devfs, serverJson,outPath));
       const templatePath = path.resolve(process.cwd(),`./dist/index.html`);
+
       let template = fs.readFileSync(templatePath, 'utf-8');
+
       chokidar.watch(templatePath).on('change', () => {
         template = fs.readFileSync(templatePath, 'utf-8')
         console.log('index.html template updated.')
-      })
+      });
+
       console.log('finished package hook1');
       require(path.resolve(process.cwd(),`./apps.js`)).devServer(app,{
         bundle,
@@ -159,11 +103,13 @@ function initMiddleWare(app, configPath,port) {
           clientManifest
         }
       },()=>{
+
         app.listen(port, async () => {
           print.log('成功启动！💪', port);
           openUrl(`http://localhost:${port}`);
           // 准备DLL库
-        })
+        });
+
       });
     } catch (e) {
       console.log(e)
