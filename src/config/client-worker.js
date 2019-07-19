@@ -18,12 +18,17 @@ process.on('message', (data) => {
     } = data;
 
     const compiler = webpack(config);
-    compiler.hooks.done.tap('WebpackDevMiddleware', (stats)=>{
-      console.log(stats,'stats');
-    });
+    // compiler.hooks.done.tap('WebpackDevMiddleware', (stats)=>{
+    //
+    // });
 
-    const devMiddleware = devMiddleWare(compiler, middleWareConfig);
-    process.send('finished');
+    process.send({
+      compiler,
+      middleWareConfig,
+    })
+
+    //const devMiddleware = devMiddleWare(compiler, middleWareConfig);
+
   } catch (e) {
     console.log(e,'紫禁城异常')
   }
