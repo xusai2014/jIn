@@ -1,6 +1,6 @@
 {
   "name": "jin-pack",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "description": "气死人，打包器！！！💪",
   "keywords": ["webpack","Vue","SSR"],
   "bin": {

@@ -11,8 +11,9 @@ import webpackHotMiddleWare from 'webpack-hot-middleware';
 import chokidar from 'chokidar';
 import { execFile } from 'child_process';
 import faster from './faster';
+import { analyzeBefore,rungingInteract } from "./interactive";
 
-const app = express();
+
 
 
 function multiTask(app,configPath) {
@@ -75,7 +76,7 @@ function initMiddleWare(app, configPath,port) {
 
   const compiler = webpack(faster(configs));
 
-  compiler.plugin('done', stats => {
+  compiler.hooks.done.tap('done',stats => {
     const outPath = clientConfig.output.path;
     const clietJson = 'vue-ssr-client-manifest.json';
     const serverJson = 'vue-ssr-server-bundle.json';
@@ -101,21 +102,28 @@ function initMiddleWare(app, configPath,port) {
       });
 
       console.log('finished package hook1');
-      require(path.resolve(process.cwd(),`./apps.js`)).devServer(app,{
-        bundle,
-        options:{
-          template,
-          clientManifest
-        }
-      },()=>{
+      const appServer = require(path.join(process.cwd(),`./apps.js`));
+      try {
+        appServer.devServer(app,{
+          bundle,
+          options:{
+            template,
+            clientManifest
+          }
+        },()=>{
 
-        app.listen(port, async () => {
-          print.log('成功启动！💪', port);
-          openUrl(`http://localhost:${port}`);
-          // 准备DLL库
+          const server = app.listen(port, async () => {
+            print.log('成功启动！💪', port);
+            openUrl(`http://localhost:${port}`);
+            rungingInteract(app,server,configPath,port);
+            // 准备DLL库
+          });
+
         });
+      } catch (e) {
+        console.log(e)
+      }
 
-      });
     } catch (e) {
       console.log(e)
     }
@@ -140,9 +148,11 @@ function openUrl(url) {
     //mac系统使用 一下命令打开url在浏览器
     case "darwin":
       exec(`open ${url}`);
+      return;
     //win系统使用 一下命令打开url在浏览器
     case "win32":
       exec(`start ${url}`);
+      return;
     // 默认mac系统
     default:
       exec(`open ${url}`);
@@ -160,7 +170,7 @@ async function ready(app, configPath, port) {
   // }
 }
 
- function preDll(configPath) {
+function preDll(configPath) {
   let dllConfig;
   if(fs.existsSync(configPath)){
     // import 动态引入需要侵入被引用框架处理，require().default问题，目前尚未在工具端找到解决方案
@@ -187,6 +197,19 @@ async function ready(app, configPath, port) {
 
 // 启动监听服务，并做好热开发打包文件加载进入内存
 async function  start(port,configPath,answers) {
+  const app = express();
+  process.env.NODE_ENV = 'development'
+  if (port > 1000) {
+    await preDll(configPath);
+
+    ready(app, configPath, port);
+
+  } else {
+    print.log('端口异常，必须大于1000', port);
+  }
+}
+
+async function restart(app,configPath,port,answers) {
   process.env.NODE_ENV = 'development'
   if (port > 1000) {
     await preDll(configPath);
@@ -212,9 +235,21 @@ async function build(configPath, answers) {
 
 }
 
-
+async function analyze(configPath, answers) {
+  process.env.NODE_ENV = 'production'
+  await preDll(configPath);
+  const configs = getWebpackConfigs(configPath);
+  try {
+    webpack(configs,(args)=>{
+      console.log('******',args)
+    });
+  } catch (e) {
+    console.log(e)
+  }
+}
 
 export  {
   start,
-  build
+  build,
+  restart,
 }
