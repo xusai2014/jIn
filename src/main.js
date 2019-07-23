@@ -89,13 +89,15 @@ function initMiddleWare(app, configPath, port) {
   let clientManifest, bundle, template;
   const appServer = require(path.join(process.cwd(), `./apps.js`));
   // 获取webpack配置信息及devMiddleWare配置信息
-  const [clientConfig] = configs;
+  const [clientConfig,serverConfig] = configs;
+  clientConfig.output.path = path.join(process.cwd(),'./dist/client');
+  serverConfig.output.path = path.join(process.cwd(),'./dist/server');
   const compiler = webpack(faster(configs));
+  const [clientCompiler,serverCompiler] = compiler.compilers;
   compiler.hooks.done.tap('done', stats => {
     const outPath = clientConfig.output.path;
     const clietJson = 'vue-ssr-client-manifest.json';
     const serverJson = 'vue-ssr-server-bundle.json';
-    const devfs = devMiddleware.fileSystem;
     const templatePath = path.resolve(process.cwd(), `./dist/index.html`);
     try {
       const data = stats.toJson();
@@ -104,9 +106,8 @@ function initMiddleWare(app, configPath, port) {
     } catch (e) {
       console.log(e)
     }
-
-    clientManifest = JSON.parse(readFile(devfs, clietJson, outPath));
-    bundle = JSON.parse(readFile(devfs, serverJson, outPath));
+    clientManifest = JSON.parse(readFile(clientCompiler.outputFileSystem, clietJson, clientConfig.output.path));
+    bundle = JSON.parse(readFile(serverCompiler.outputFileSystem, serverJson, serverConfig.output.path));
     template = fs.readFileSync(templatePath, 'utf-8');
     chokidar.watch(templatePath).on('change', () => {
       template = fs.readFileSync(templatePath, 'utf-8')

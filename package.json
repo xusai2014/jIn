@@ -27,6 +27,7 @@
     "cache-loader": "^4.1.0",
     "chokidar": "^3.0.2",
     "inquirer": "^6.5.0",
+    "memory-fs": "^0.4.1",
     "thread-loader": "^2.1.2",
     "webpack-dev-middleware": "^3.7.0",
     "webpack-hot-middleware": "^2.25.0",
