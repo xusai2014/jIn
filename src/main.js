@@ -178,28 +178,52 @@ async function ready(app, configPath, port) {
 
 // DLL文件打包及模版生成
 function preDll(configPath) {
-  let dllConfig;
+  let dllConfig,templateConfig;
   if(fs.existsSync(configPath)){
     // import 动态引入需要侵入被引用框架处理，require().default问题，目前尚未在工具端找到解决方案
     // clientConfig = await import(path.resolve(process.cwd(),`${configPath}/webpack.client.config.js`));
     // serverConfig = await import(path.resolve(process.cwd(),`${configPath}/webpack.server.config.js`));
-    dllConfig = require(path.resolve(process.cwd(),`${configPath}/webpack.template.config.js`));
+    dllConfig = require(path.resolve(process.cwd(),`${configPath}/webpack.dll.config.js`));
+
   } else {
     dllConfig = GeneratePack('production', 'template', 1);
   }
+  if(fs.existsSync('./manifest.json')){
+    return new Promise((resolve,reject)=>{
+      try {
+        templateConfig = require(path.resolve(process.cwd(),`${configPath}/webpack.template.config.js`));
+        webpack(templateConfig,()=>{
 
-  return new Promise((resolve,reject)=>{
-    try {
-      webpack(dllConfig,()=>{
-        print.log('DLL动态连接库及模版准备完毕！💪');
-        resolve()
-      });
-    } catch (e) {
-      print.error('动态链接库及模版打包异常',e)
-      throw Error('动态链接库及模版打包异常,请联系Jerry')
-    }
+          print.log('DLL动态连接库及模版准备完毕！💪');
+          resolve()
+        })
+      } catch (e) {
+        print.error('动态链接库及模版打包异常',e)
+        throw Error('动态链接库及模版打包异常,请联系Jerry')
+      }
 
-  })
+    })
+
+  } else {
+    return new Promise((resolve,reject)=>{
+      try {
+        webpack(dllConfig,()=>{
+          templateConfig = require(path.resolve(process.cwd(),`${configPath}/webpack.template.config.js`));
+          webpack(templateConfig,()=>{
+
+            print.log('DLL动态连接库及模版准备完毕！💪');
+            resolve()
+          })
+        });
+      } catch (e) {
+        print.error('动态链接库及模版打包异常',e)
+        throw Error('动态链接库及模版打包异常,请联系Jerry')
+      }
+
+    })
+  }
+
+
 }
 
 

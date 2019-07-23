@@ -1,8 +1,12 @@
 {
   "name": "jin-pack",
-  "version": "1.0.4",
+  "version": "1.0.7",
   "description": "气死人，打包器！！！💪",
-  "keywords": ["webpack","Vue","SSR"],
+  "keywords": [
+    "webpack",
+    "Vue",
+    "SSR"
+  ],
   "bin": {
     "jIn": "lib/jIn.js"
   },
@@ -34,7 +38,6 @@
     "@babel/preset-env": "^7.5.4",
     "express": "^4.17.1",
     "happypack": "^5.0.1",
-    "stats-webpack-plugin": "^0.7.0",
     "webpack": "^4.35.3",
     "webpack-cli": "^3.3.6"
   }
