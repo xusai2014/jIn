@@ -1,4 +1,4 @@
-import StatsPlugin from 'stats-webpack-plugin';
+
 
 /**
 *   @author jerryxu

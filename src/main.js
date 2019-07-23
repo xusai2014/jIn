@@ -15,7 +15,7 @@ import { analyzeBefore,rungingInteract } from "./interactive";
 
 
 
-
+// 利用多worker处理打包过程，无法共享内存，待解决
 function multiTask(app,configPath) {
   const childWorkers = [
     ['/webpack.client.config.js','./config/server-worker.js'],
@@ -46,6 +46,7 @@ function multiTask(app,configPath) {
 
 }
 
+//读取文件方法，可指定文件系统
 const readFile = (fs, file, path) => {
   try {
     const filtPath = `${path}/${file}`;
@@ -53,6 +54,8 @@ const readFile = (fs, file, path) => {
   } catch (e) {}
 }
 
+
+// 获取项目的webpack配置信息
 function getWebpackConfigs(configPath) {
   const configs = ['client','server']
     .map((str)=>{
@@ -68,6 +71,8 @@ function getWebpackConfigs(configPath) {
   return configs;
 }
 
+
+//初始化webpack middleWare
 function initMiddleWare(app, configPath,port) {
   let configs = getWebpackConfigs(configPath);
 
@@ -101,7 +106,7 @@ function initMiddleWare(app, configPath,port) {
         console.log('index.html template updated.')
       });
 
-      console.log('finished package hook1');
+      console.log('finished package hook1',app);
       const appServer = require(path.join(process.cwd(),`./apps.js`));
       try {
         appServer.devServer(app,{
@@ -115,7 +120,7 @@ function initMiddleWare(app, configPath,port) {
           const server = app.listen(port, async () => {
             print.log('成功启动！💪', port);
             openUrl(`http://localhost:${port}`);
-            rungingInteract(app,server,configPath,port);
+            //rungingInteract(app,server,configPath,port);
             // 准备DLL库
           });
 
@@ -170,6 +175,8 @@ async function ready(app, configPath, port) {
   // }
 }
 
+
+// DLL文件打包及模版生成
 function preDll(configPath) {
   let dllConfig;
   if(fs.existsSync(configPath)){
@@ -195,6 +202,7 @@ function preDll(configPath) {
   })
 }
 
+
 // 启动监听服务，并做好热开发打包文件加载进入内存
 async function  start(port,configPath,answers) {
   const app = express();
@@ -209,20 +217,20 @@ async function  start(port,configPath,answers) {
   }
 }
 
+// 重新启动，热启动待修复方案
 async function restart(app,configPath,port,answers) {
-  process.env.NODE_ENV = 'development'
+  process.env.NODE_ENV = 'development';
   if (port > 1000) {
     await preDll(configPath);
-
     ready(app, configPath, port);
-
   } else {
     print.log('端口异常，必须大于1000', port);
   }
 }
 
+// 打包过程
 async function build(configPath, answers) {
-  process.env.NODE_ENV = 'production'
+  process.env.NODE_ENV = 'production';
   await preDll(configPath);
   const configs = getWebpackConfigs(configPath);
   try {
@@ -235,6 +243,7 @@ async function build(configPath, answers) {
 
 }
 
+// 分析工具
 async function analyze(configPath, answers) {
   process.env.NODE_ENV = 'production'
   await preDll(configPath);
