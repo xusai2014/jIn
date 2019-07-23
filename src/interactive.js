@@ -115,7 +115,6 @@ const inputList = [
     validate: function (answer) {
       return true;
     }
-
   },
   {
     type: 'list',
@@ -140,17 +139,22 @@ const inputList = [
 
 function rungingInteract(app, server, configPath, port) {
   var ui = new inquirer.ui.BottomBar();
-  ui.log.write('请记住，如果你想重新选择启动的入口或业务模块，请按输入重新选择！')
-  inquirer.prompt(inputList).then(async (answers) => {
-    const {action} = answers;
-    if (action == 'channel') {
-      server.close();
-      const answers = await packBefore();
-      restart(app, configPath, port, answers);
-    } else if (action == 'bussnes') {
-      restart(app, configPath, port, answers);
-    }
-  })
+  ui.log.write('请记住，如果你想重新选择启动的入口或业务模块，请按输入重新选择！');
+  try {
+    inquirer.prompt(inputList).then((answers) => {
+      // const {action} = answers;
+      // if (action == 'channel') {
+      //   server.close(async ()=>{
+      //     const answers = await packBefore();
+      //     restart(app, configPath, port, answers);
+      //   });
+      // } else if (action == 'bussnes') {
+      //   restart(app, configPath, port, answers);
+      // }
+    })
+  } catch (e) {
+    console.log('rungingInteract',e)
+  }
 }
 
 export {

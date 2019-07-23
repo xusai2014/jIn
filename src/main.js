@@ -80,6 +80,8 @@ function initMiddleWare(app, configPath,port) {
   const [ clientConfig ] = configs;
 
   const compiler = webpack(faster(configs));
+  let server = null;
+  let clientManifest,bundle,template;
 
   compiler.hooks.done.tap('done',stats => {
     const outPath = clientConfig.output.path;
@@ -94,19 +96,14 @@ function initMiddleWare(app, configPath,port) {
       console.log(e)
     }
     try {
-      const clientManifest = JSON.parse(readFile(devfs, clietJson,outPath));
-
-      const bundle = JSON.parse(readFile(devfs, serverJson,outPath));
       const templatePath = path.resolve(process.cwd(),`./dist/index.html`);
-
-      let template = fs.readFileSync(templatePath, 'utf-8');
-
+      clientManifest = JSON.parse(readFile(devfs, clietJson,outPath));
+      bundle = JSON.parse(readFile(devfs, serverJson,outPath));
+      template = fs.readFileSync(templatePath, 'utf-8');
       chokidar.watch(templatePath).on('change', () => {
         template = fs.readFileSync(templatePath, 'utf-8')
         console.log('index.html template updated.')
       });
-
-      console.log('finished package hook1',app);
       const appServer = require(path.join(process.cwd(),`./apps.js`));
       try {
         appServer.devServer(app,{
@@ -117,9 +114,13 @@ function initMiddleWare(app, configPath,port) {
           }
         },()=>{
 
-          const server = app.listen(port, async () => {
+          if(server){
+            return;
+          }
+
+          server = app.listen(port, async () => {
             print.log('成功启动！💪', port);
-            openUrl(`http://localhost:${port}`);
+            openUrl(`http://localhost:${port}/newdetails`);
             //rungingInteract(app,server,configPath,port);
             // 准备DLL库
           });
