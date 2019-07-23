@@ -11,31 +11,31 @@ import webpackHotMiddleWare from 'webpack-hot-middleware';
 import chokidar from 'chokidar';
 import { execFile } from 'child_process';
 import faster from './faster';
-import { analyzeBefore,rungingInteract } from "./interactive";
-
 
 
 // 利用多worker处理打包过程，无法共享内存，待解决
-function multiTask(app,configPath) {
+function multiTask(app, configPath) {
   const childWorkers = [
-    ['/webpack.client.config.js','./config/server-worker.js'],
-    ['/webpack.client.config.js','./config/server-worker.js']
-  ].map((cfg)=>{
-    const [ webpackCfg, workerCfg] = cfg;
-    const workerChild = childProcess.fork(path.join(__dirname,workerCfg));
+    ['/webpack.client.config.js', './config/server-worker.js'],
+    ['/webpack.client.config.js', './config/server-worker.js']
+  ].map((cfg) => {
+    const [webpackCfg, workerCfg] = cfg;
+    const workerChild = childProcess.fork(path.join(__dirname, workerCfg));
 
-    workerChild.send({webpackConfig:`${configPath}${webpackCfg}`,});
+    workerChild.send({webpackConfig: `${configPath}${webpackCfg}`,});
 
-    workerChild.on('message', ({compiler,middleWareConfig}) => {
-      const devMiddleware = devMiddleWare(compiler,middleWareConfig );
+    workerChild.on('message', ({compiler, middleWareConfig}) => {
+      const devMiddleware = devMiddleWare(compiler, middleWareConfig);
       app.use(devMiddleware)
     })
   });
-  function killChilds(){
-    childWorkers.map((child)=>child.kill());
+
+  function killChilds() {
+    childWorkers.map((child) => child.kill());
     process.exit();
   }
-  process.on('SIGINT',()=>{
+
+  process.on('SIGINT', () => {
     console.log('手动终止了进程')
     killChilds();
   })
@@ -51,19 +51,29 @@ const readFile = (fs, file, path) => {
   try {
     const filtPath = `${path}/${file}`;
     return fs.readFileSync(filtPath, 'utf-8')
-  } catch (e) {}
+  } catch (e) {
+  }
 }
 
 
 // 获取项目的webpack配置信息
 function getWebpackConfigs(configPath) {
-  const configs = ['client','server']
-    .map((str)=>{
-      if(fs.existsSync(configPath)){
+  const configs = ['client', 'server']
+    .map((str) => {
+      if (fs.existsSync(configPath)) {
         // import 动态引入需要侵入被引用框架处理，require().default问题，目前尚未在工具端找到解决方案
         // clientConfig = await import(path.resolve(process.cwd(),`${configPath}/webpack.client.config.js`));
         // serverConfig = await import(path.resolve(process.cwd(),`${configPath}/webpack.server.config.js`));
-        return require(path.join(process.cwd(),`${configPath}/webpack.${str}.config.js`));
+        const cfg = require(path.join(process.cwd(), `${configPath}/webpack.${str}.config.js`));
+        if (str == 'client') {
+          cfg.entry = [
+            'webpack-hot-middleware/client',
+            cfg.entry.app,
+          ];
+          cfg.plugins.push(new webpack.HotModuleReplacementPlugin());
+        }
+        cfg.output.filename = '[name].[hash].js';
+        return cfg;
       } else {
         return GeneratePack('development', str, 2);
       }
@@ -73,78 +83,69 @@ function getWebpackConfigs(configPath) {
 
 
 //初始化webpack middleWare
-function initMiddleWare(app, configPath,port) {
+function initMiddleWare(app, configPath, port) {
   let configs = getWebpackConfigs(configPath);
-
+  let init = false;
+  let clientManifest, bundle, template;
+  const appServer = require(path.join(process.cwd(), `./apps.js`));
   // 获取webpack配置信息及devMiddleWare配置信息
-  const [ clientConfig ] = configs;
-
+  const [clientConfig] = configs;
   const compiler = webpack(faster(configs));
-  let server = null;
-  let clientManifest,bundle,template;
-
-  compiler.hooks.done.tap('done',stats => {
+  compiler.hooks.done.tap('done', stats => {
     const outPath = clientConfig.output.path;
     const clietJson = 'vue-ssr-client-manifest.json';
     const serverJson = 'vue-ssr-server-bundle.json';
     const devfs = devMiddleware.fileSystem;
+    const templatePath = path.resolve(process.cwd(), `./dist/index.html`);
     try {
       const data = stats.toJson();
       //fs.writeFile('./stats.json', JSON.stringify(data))
-      if (data.errors.length>0) throw Error('打包出现了异常');
+      if (data.errors.length > 0) throw Error('打包出现了异常');
     } catch (e) {
       console.log(e)
     }
-    try {
-      const templatePath = path.resolve(process.cwd(),`./dist/index.html`);
-      clientManifest = JSON.parse(readFile(devfs, clietJson,outPath));
-      bundle = JSON.parse(readFile(devfs, serverJson,outPath));
-      template = fs.readFileSync(templatePath, 'utf-8');
-      chokidar.watch(templatePath).on('change', () => {
-        template = fs.readFileSync(templatePath, 'utf-8')
-        console.log('index.html template updated.')
-      });
-      const appServer = require(path.join(process.cwd(),`./apps.js`));
+
+    clientManifest = JSON.parse(readFile(devfs, clietJson, outPath));
+    bundle = JSON.parse(readFile(devfs, serverJson, outPath));
+    template = fs.readFileSync(templatePath, 'utf-8');
+    chokidar.watch(templatePath).on('change', () => {
+      template = fs.readFileSync(templatePath, 'utf-8')
+      console.log('index.html template updated.')
+    });
+
+    if (init) {
+      appServer.setRender(app, {bundle, options: {template, clientManifest}},);
+      return;
+    } else {
       try {
-        appServer.devServer(app,{
+        appServer.setRender(app, {
           bundle,
-          options:{
+          options: {
             template,
             clientManifest
           }
-        },()=>{
-
-          if(server){
-            return;
-          }
-
-          server = app.listen(port, async () => {
+        }, () => {
+          app.listen(port, async () => {
             print.log('成功启动！💪', port);
             openUrl(`http://localhost:${port}/newdetails`);
             //rungingInteract(app,server,configPath,port);
             // 准备DLL库
           });
-
         });
       } catch (e) {
         console.log(e)
       }
-
-    } catch (e) {
-      console.log(e)
     }
-  });
 
+  });
   const middleWareConfig = {
     publicPath: clientConfig.output.publicPath,
     onInfo: true,
-    logLevel:'error'
+    logLevel: 'error'
   };
-  const devMiddleware = devMiddleWare(compiler,middleWareConfig );
-
-
+  const devMiddleware = devMiddleWare(compiler, middleWareConfig);
   app.use(devMiddleware);
-  app.use(webpackHotMiddleWare(compiler, { heartbeat: 5000 }));
+  app.use(webpackHotMiddleWare(compiler, {heartbeat: 5000}));
 
 }
 
@@ -172,52 +173,52 @@ async function ready(app, configPath, port) {
   // if (os.cpus().length >= 2) {
   //   multiTask(app,configPath);
   // } else {
-     initMiddleWare(app, configPath, port);
+  initMiddleWare(app, configPath, port);
   // }
 }
 
 
 // DLL文件打包及模版生成
 function preDll(configPath) {
-  let dllConfig,templateConfig;
-  if(fs.existsSync(configPath)){
+  let dllConfig, templateConfig;
+  if (fs.existsSync(configPath)) {
     // import 动态引入需要侵入被引用框架处理，require().default问题，目前尚未在工具端找到解决方案
     // clientConfig = await import(path.resolve(process.cwd(),`${configPath}/webpack.client.config.js`));
     // serverConfig = await import(path.resolve(process.cwd(),`${configPath}/webpack.server.config.js`));
-    dllConfig = require(path.resolve(process.cwd(),`${configPath}/webpack.dll.config.js`));
+    dllConfig = require(path.resolve(process.cwd(), `${configPath}/webpack.dll.config.js`));
 
   } else {
     dllConfig = GeneratePack('production', 'template', 1);
   }
-  if(fs.existsSync('./manifest.json')){
-    return new Promise((resolve,reject)=>{
+  if (fs.existsSync('./manifest.json')) {
+    return new Promise((resolve, reject) => {
       try {
-        templateConfig = require(path.resolve(process.cwd(),`${configPath}/webpack.template.config.js`));
-        webpack(templateConfig,()=>{
+        templateConfig = require(path.resolve(process.cwd(), `${configPath}/webpack.template.config.js`));
+        webpack(templateConfig, () => {
 
           print.log('DLL动态连接库及模版准备完毕！💪');
           resolve()
         })
       } catch (e) {
-        print.error('动态链接库及模版打包异常',e)
+        print.error('动态链接库及模版打包异常', e)
         throw Error('动态链接库及模版打包异常,请联系Jerry')
       }
 
     })
 
   } else {
-    return new Promise((resolve,reject)=>{
+    return new Promise((resolve, reject) => {
       try {
-        webpack(dllConfig,()=>{
-          templateConfig = require(path.resolve(process.cwd(),`${configPath}/webpack.template.config.js`));
-          webpack(templateConfig,()=>{
+        webpack(dllConfig, () => {
+          templateConfig = require(path.resolve(process.cwd(), `${configPath}/webpack.template.config.js`));
+          webpack(templateConfig, () => {
 
             print.log('DLL动态连接库及模版准备完毕！💪');
             resolve()
           })
         });
       } catch (e) {
-        print.error('动态链接库及模版打包异常',e)
+        print.error('动态链接库及模版打包异常', e)
         throw Error('动态链接库及模版打包异常,请联系Jerry')
       }
 
@@ -229,7 +230,7 @@ function preDll(configPath) {
 
 
 // 启动监听服务，并做好热开发打包文件加载进入内存
-async function  start(port,configPath,answers) {
+async function start(port, configPath, answers) {
   const app = express();
   process.env.NODE_ENV = 'development'
   if (port > 1000) {
@@ -243,7 +244,7 @@ async function  start(port,configPath,answers) {
 }
 
 // 重新启动，热启动待修复方案
-async function restart(app,configPath,port,answers) {
+async function restart(app, configPath, port, answers) {
   process.env.NODE_ENV = 'development';
   if (port > 1000) {
     await preDll(configPath);
@@ -259,8 +260,8 @@ async function build(configPath, answers) {
   await preDll(configPath);
   const configs = getWebpackConfigs(configPath);
   try {
-    webpack(configs,(args)=>{
-      console.log('******',args)
+    webpack(configs, (args) => {
+      console.log('******', args)
     });
   } catch (e) {
     console.log(e)
@@ -274,15 +275,15 @@ async function analyze(configPath, answers) {
   await preDll(configPath);
   const configs = getWebpackConfigs(configPath);
   try {
-    webpack(configs,(args)=>{
-      console.log('******',args)
+    webpack(configs, (args) => {
+      console.log('******', args)
     });
   } catch (e) {
     console.log(e)
   }
 }
 
-export  {
+export {
   start,
   build,
   restart,

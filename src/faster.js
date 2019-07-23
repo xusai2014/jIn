@@ -72,18 +72,7 @@ export default (configs)=>{
     warnings: true,
 
   }
-  configs[0] = {
-    ...configs[0],
-    entry:[
-      'webpack-hot-middleware/client',
-      configs[0].entry.app,
-    ],
-    plugins: [
-      ...configs[0].plugins,
-      new webpack.HotModuleReplacementPlugin()
-    ]
-  }
-  configs[0].output.filename ='[name].[hash].js';
+
   const devConfigs = configs.map((config,k)=>{
     const { module,plugins } = config; // babel-loader
 
