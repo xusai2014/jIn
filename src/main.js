@@ -128,6 +128,7 @@ function initMiddleWare(app, configPath, port) {
         }, () => {
           app.listen(port, async () => {
             print.log('成功启动！💪', port);
+            init = true;
             openUrl(`http://localhost:${port}/newdetails`);
             //rungingInteract(app,server,configPath,port);
             // 准备DLL库
@@ -146,7 +147,7 @@ function initMiddleWare(app, configPath, port) {
   };
   const devMiddleware = devMiddleWare(compiler, middleWareConfig);
   app.use(devMiddleware);
-  app.use(webpackHotMiddleWare(compiler, {heartbeat: 5000}));
+  app.use(webpackHotMiddleWare(clientCompiler, {heartbeat: 5000}));
 
 }
 
