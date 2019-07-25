@@ -50,6 +50,10 @@ const defaultList = [
     default:0,
     choices: [
       {
+        name: 'All',
+        value: ''
+      },
+      {
         name: 'Rob',
         value: 'rob'
       },

@@ -92,7 +92,8 @@ function initMiddleWare(app, configPath, port) {
   const [clientConfig,serverConfig] = configs;
   clientConfig.output.path = path.join(process.cwd(),'./dist/client');
   serverConfig.output.path = path.join(process.cwd(),'./dist/server');
-  const compiler = webpack(faster(configs));
+  const fastCfg = faster(configs)
+  const compiler = webpack(fastCfg);
   const [clientCompiler,serverCompiler] = compiler.compilers;
   compiler.hooks.done.tap('done', stats => {
     const outPath = clientConfig.output.path;
@@ -262,9 +263,7 @@ async function build(configPath, answers) {
   await preDll(configPath);
   const configs = getWebpackConfigs(configPath);
   try {
-    webpack(configs, (args) => {
-      console.log('******', args)
-    });
+    webpack(configs);
   } catch (e) {
     console.log(e)
   }

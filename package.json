@@ -1,6 +1,6 @@
 {
   "name": "jin-pack",
-  "version": "1.0.7",
+  "version": "1.1.2",
   "description": "气死人，打包器！！！💪",
   "keywords": [
     "webpack",
@@ -37,7 +37,7 @@
     "@babel/cli": "^7.5.0",
     "@babel/core": "^7.5.4",
     "@babel/preset-env": "^7.5.4",
-    "express": "^4.17.1",
+    "express": "^4.16.4",
     "happypack": "^5.0.1",
     "webpack": "^4.35.3",
     "webpack-cli": "^3.3.6"

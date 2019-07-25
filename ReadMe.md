@@ -17,7 +17,10 @@ $ yarn add jin-pack --dev
 $ jIn start ./build
 
 // build 文件夹下存放 template 配置文件，client配置文件， server 配置文件
+// 指定启动文件即app.js,
+
 ```
+
 
 生产打包模式
 ```
@@ -27,3 +30,4 @@ $ jIn build ./build
 
 // build 文件夹下存放 template 配置文件，client配置文件， server 配置文件
 ```
+
