@@ -76,13 +76,11 @@ function getWebpackConfigs(configPath) {
           cfg.devtool = false;
         }
         cfg.output.filename = '[name].[hash].js';
-        cfg.watch = true
         return cfg;
       } else {
         return GeneratePack('development', str, 2);
       }
     })
-
   return configs;
 }
 
@@ -102,16 +100,7 @@ function initMiddleWare(app, configPath, port) {
   const compiler = webpack(fastCfg);
 
   const [clientCompiler,serverCompiler] = compiler.compilers;
-  compiler.run(function (err, stats) {
-    if (err) throw err
-    process.stdout.write(stats.toString({
-      colors: true,
-      modules: false,
-      children: false,
-      chunks: false,
-      chunkModules: false
-    }) + '\n\n')
-  })
+
   compiler.hooks.done.tap('done', stats => {
     const clietJson = 'vue-ssr-client-manifest.json';
     const serverJson = 'vue-ssr-server-bundle.json';

@@ -6,17 +6,27 @@
  */
 import path from 'path';
 import * as threadLoader from 'thread-loader';
-const Jarvis = require("webpack-jarvis");
 
 
 export default (configs) => {
+  const stats = {
+    // copied from `'minimal'`
+    all: false,
+    modules: true,
+    maxModules: 0,
+    errors: true,
+    warnings: true,
+    // our additional options
+    moduleTrace: true,
+    errorDetails: true
+  }
 
-  const devConfigs = configs.map((config, k) => {
+  const devConfigs = configs.map((config, i) => {
     const {module, plugins} = config; // babel-loader
 
     const {rules} = module;
 
-    const cacheRules = rules.map((v,i) => {
+    const cacheRules = rules.map((v,k) => {
       const {loader = '', use, options, ...rest} = v;
       if (typeof use == 'object') {
         return {
@@ -73,7 +83,7 @@ export default (configs) => {
               options,
             }
           ],
-          //sideEffects: true,
+          sideEffects: true,
         }
       } else {
         return v;
@@ -88,16 +98,11 @@ export default (configs) => {
       cache: true,
       parallelism: 500,
       module,
-      plugins:[
-        ...plugins,
-        new Jarvis({
-          port: 1337+k// optional: set a port
-        })
-      ],
+      plugins,
       stats: 'verbose',
       optimization: {
         minimize: false,
-        //usedExports: true
+        usedExports: true
       },
       profile: true,
     }

@@ -7,6 +7,7 @@
     "Vue",
     "SSR"
   ],
+  "sideEffect": true,
   "bin": {
     "jIn": "lib/jIn.js"
   },
