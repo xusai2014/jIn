@@ -69,7 +69,7 @@ export default (configs) => {
           // can be used to create different pools with elsewise identical options
           name: `loader-${i}-${k}`
         }
-        threadLoader.warmup(optionsThread,[loader]);
+        //threadLoader.warmup(optionsThread,[loader]);
         return {
           ...rest,
           use: [
@@ -83,7 +83,6 @@ export default (configs) => {
               options,
             }
           ],
-          sideEffects: true,
         }
       } else {
         return v;
@@ -99,7 +98,6 @@ export default (configs) => {
       parallelism: 500,
       module,
       plugins,
-      stats: 'verbose',
       optimization: {
         minimize: false,
         usedExports: true
