@@ -71,32 +71,48 @@ function getWebpackConfigs(configPath) {
             cfg.entry.app,
           ];
           cfg.plugins.push(new webpack.HotModuleReplacementPlugin());
+          cfg.devtool = 'cheap-eval-source-map';
+        } else {
+          cfg.devtool = false;
         }
         cfg.output.filename = '[name].[hash].js';
+        cfg.watch = true
         return cfg;
       } else {
         return GeneratePack('development', str, 2);
       }
     })
+
   return configs;
 }
 
 
 //初始化webpack middleWare
 function initMiddleWare(app, configPath, port) {
-  let configs = getWebpackConfigs(configPath);
   let init = false;
   let clientManifest, bundle, template;
   const appServer = require(path.join(process.cwd(), `./apps.js`));
   // 获取webpack配置信息及devMiddleWare配置信息
+  let configs = getWebpackConfigs(configPath);
   const [clientConfig,serverConfig] = configs;
+
   clientConfig.output.path = path.join(process.cwd(),'./dist/client');
   serverConfig.output.path = path.join(process.cwd(),'./dist/server');
   const fastCfg = faster(configs)
   const compiler = webpack(fastCfg);
+
   const [clientCompiler,serverCompiler] = compiler.compilers;
+  compiler.run(function (err, stats) {
+    if (err) throw err
+    process.stdout.write(stats.toString({
+      colors: true,
+      modules: false,
+      children: false,
+      chunks: false,
+      chunkModules: false
+    }) + '\n\n')
+  })
   compiler.hooks.done.tap('done', stats => {
-    const outPath = clientConfig.output.path;
     const clietJson = 'vue-ssr-client-manifest.json';
     const serverJson = 'vue-ssr-server-bundle.json';
     const templatePath = path.resolve(process.cwd(), `./dist/index.html`);
@@ -109,6 +125,7 @@ function initMiddleWare(app, configPath, port) {
     }
     clientManifest = JSON.parse(readFile(clientCompiler.outputFileSystem, clietJson, clientConfig.output.path));
     bundle = JSON.parse(readFile(serverCompiler.outputFileSystem, serverJson, serverConfig.output.path));
+
     template = fs.readFileSync(templatePath, 'utf-8');
     chokidar.watch(templatePath).on('change', () => {
       template = fs.readFileSync(templatePath, 'utf-8')
