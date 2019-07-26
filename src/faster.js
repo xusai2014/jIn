@@ -9,18 +9,6 @@ import * as threadLoader from 'thread-loader';
 
 
 export default (configs) => {
-  const stats = {
-    // copied from `'minimal'`
-    all: false,
-    modules: true,
-    maxModules: 0,
-    errors: true,
-    warnings: true,
-    // our additional options
-    moduleTrace: true,
-    errorDetails: true
-  }
-
   const devConfigs = configs.map((config, i) => {
     const {module, plugins} = config; // babel-loader
 
@@ -32,7 +20,16 @@ export default (configs) => {
         return {
           ...rest,
           use: [
-            'cache-loader',
+
+            {
+              loader:'cache-loader',
+              options:{
+                cacheKey:function (options, request) {
+                  return `./.jin/${i}-${k}`
+                }
+              }
+
+            },
             ...use
           ],
         }
@@ -69,11 +66,19 @@ export default (configs) => {
           // can be used to create different pools with elsewise identical options
           name: `loader-${i}-${k}`
         }
-        //threadLoader.warmup(optionsThread,[loader]);
+        threadLoader.warmup(optionsThread,[loader]);
         return {
           ...rest,
           use: [
-            'cache-loader',
+            {
+              loader:'cache-loader',
+              options:{
+                cacheKey:function (options, request) {
+                 return `./.jin/${i}-${k}`
+                }
+              }
+
+            },
             {
               loader: "thread-loader",
               options: optionsThread
