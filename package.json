@@ -1,6 +1,6 @@
 {
   "name": "jin-pack",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "气死人，打包器！！！💪",
   "keywords": [
     "webpack",
@@ -28,6 +28,7 @@
     "babel-plugin-add-module-exports": "^1.0.2",
     "cache-loader": "^4.1.0",
     "chokidar": "^3.0.2",
+    "imagemin": "^7.0.0",
     "inquirer": "^6.5.0",
     "memory-fs": "^0.4.1",
     "thread-loader": "^2.1.2",
