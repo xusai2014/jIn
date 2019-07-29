@@ -149,12 +149,19 @@ function initMiddleWare(app, configPath, port) {
   });
   const middleWareConfig = {
     publicPath: clientConfig.output.publicPath,
-    onInfo: true,
-    logLevel: 'error'
+    stats: {
+      colors: true,
+      context: process.cwd(),
+    },
+    watchOptions:{
+      aggregateTimeout: 300,
+      poll: 1000,
+      ignored: /node_modules/
+    }
   };
   const devMiddleware = devMiddleWare(compiler, middleWareConfig);
   app.use(devMiddleware);
-  app.use(webpackHotMiddleWare(clientCompiler, {heartbeat: 5000}));
+  app.use(webpackHotMiddleWare(clientCompiler, {heartbeat: 3000}));
 
 }
 
