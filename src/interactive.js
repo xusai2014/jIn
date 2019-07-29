@@ -77,6 +77,7 @@ function packBefore(list = defaultList) {
         process.env.npm_config_config = channel;
         process.env.npm_config_router = bussness;
         process.env.NODE_ENV = 'development';
+        process.env.dev_tool = 'jIn';
         resolve(answers);
       });
   })

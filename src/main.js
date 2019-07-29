@@ -136,7 +136,7 @@ function initMiddleWare(app, configPath, port) {
           app.listen(port, async () => {
             print.log('成功启动！💪', port);
             init = true;
-            openUrl(`http://localhost:${port}/newdetails`);
+            openUrl(`http://localhost:${port}/index`);
             //rungingInteract(app,server,configPath,port);
             // 准备DLL库
           });
