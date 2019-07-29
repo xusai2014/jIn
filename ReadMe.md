@@ -31,6 +31,17 @@ $ ./node_modules/.bin/jIn build ./build
 // build 文件夹下存放 template 配置文件，client配置文件， server 配置文件
 ```
 
+
+图片压缩工具
+～～ 批量压缩，如遇多彩图片请使用其它工具压缩 ～～
+```
+$ cd YourProject
+$ yarn add jin-pack --dev
+$ ./node_modules/.bin/jIn zip ./src/images
+
+```
+
+
 ### Interface
 
 目录接口

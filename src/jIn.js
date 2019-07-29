@@ -4,6 +4,7 @@ import { packBefore,analyzeBefore } from "./interactive";
 import { start,build,analyze } from './main';
 import yargs from 'yargs';
 import { pathExist } from "./utils";
+import fileDisplay from "./zip";
 
 yargs.command(`start <configPath> [port]`, '启动本地开发服务', (yargs) => {
   yargs.positional('configPath', {
@@ -58,6 +59,23 @@ yargs.command(`start <configPath> [port]`, '启动本地开发服务', (yargs) =
     console.log(`请指定打包配置文件入口路径`);
   }
 })
+  .command(`zip <imagePath>`, '压缩本地图片', (yargs) => {
+    yargs.positional('imagePath', {
+      describe: '指定图片地址路径',
+    });
+  }, async (argv) => {
+    const { imagePath } = argv
+    if (imagePath) {
+      const isExsit = await pathExist(imagePath)
+      if (isExsit) {
+        fileDisplay(imagePath);
+      } else {
+        console.log('请检查图片地址路径',imagePath)
+      }
+    } else {
+      console.log(`请指定图片地址路径`, argv);
+    }
+  })
   .help('help')
   .argv;
 
