@@ -10,7 +10,7 @@ import * as threadLoader from 'thread-loader';
 
 export default (configs) => {
   const devConfigs = configs.map((config, i) => {
-    const {module, plugins} = config; // babel-loader
+    const {module, plugins, optimization} = config; // babel-loader
 
     const {rules} = module;
 
@@ -104,6 +104,7 @@ export default (configs) => {
       module,
       plugins,
       optimization: {
+        ...optimization,
         minimize: false,
         usedExports: true
       },

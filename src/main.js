@@ -66,7 +66,7 @@ function getWebpackConfigs(configPath) {
         // serverConfig = await import(path.resolve(process.cwd(),`${configPath}/webpack.server.config.js`));
         const cfg = require(path.join(process.cwd(), `${configPath}/webpack.${str}.config.js`));
         if (str == 'client') {
-          cfg.entry = [
+          cfg.entry.app = [
             'webpack-hot-middleware/client',
             cfg.entry.app,
           ];
