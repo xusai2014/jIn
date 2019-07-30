@@ -34,8 +34,8 @@ yargs.command(`start <configPath> [port]`, '启动本地开发服务', (yargs) =
   if (argv.configPath) {
     const isExsit = await pathExist(argv.configPath)
     if (isExsit) {
-      const answers = await packBefore();
-      build(argv.configPath, answers)
+      //const answers = await packBefore();
+      build(argv.configPath)
     } else {
       console.log('请检查打包配置文件入口路径')
     }

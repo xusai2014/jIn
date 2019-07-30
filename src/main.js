@@ -65,17 +65,19 @@ function getWebpackConfigs(configPath) {
         // clientConfig = await import(path.resolve(process.cwd(),`${configPath}/webpack.client.config.js`));
         // serverConfig = await import(path.resolve(process.cwd(),`${configPath}/webpack.server.config.js`));
         const cfg = require(path.join(process.cwd(), `${configPath}/webpack.${str}.config.js`));
-        if (str == 'client') {
-          cfg.entry.app = [
-            'webpack-hot-middleware/client',
-            cfg.entry.app,
-          ];
-          cfg.plugins.push(new webpack.HotModuleReplacementPlugin());
-          cfg.devtool = 'cheap-eval-source-map';
-        } else {
-          cfg.devtool = false;
+        if(process.env.NODE_ENV == 'development'){
+          if (str == 'client') {
+            cfg.entry.app = [
+              'webpack-hot-middleware/client',
+              cfg.entry.app,
+            ];
+            cfg.plugins.push(new webpack.HotModuleReplacementPlugin());
+            cfg.devtool = 'cheap-eval-source-map';
+          } else {
+            cfg.devtool = false;
+          }
+          cfg.output.filename = '[name].[hash].js';
         }
-        cfg.output.filename = '[name].[hash].js';
         return cfg;
       } else {
         return GeneratePack('development', str, 2);
@@ -271,16 +273,10 @@ async function restart(app, configPath, port, answers) {
 }
 
 // 打包过程
-async function build(configPath, answers) {
-  process.env.NODE_ENV = 'production';
+async function build(configPath) {
   await preDll(configPath);
   const configs = getWebpackConfigs(configPath);
-  try {
-    webpack(configs);
-  } catch (e) {
-    console.log(e)
-  }
-
+  webpack(configs,()=>{});
 }
 
 // 分析工具
